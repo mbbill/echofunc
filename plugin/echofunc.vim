@@ -3,8 +3,8 @@
 " Brief:        Echo the function declaration in
 "               the command line for C/C++.
 " Author:       Mingbai <mbbill AT gmail DOT com>
-" Last Change:  2007-08-29 14:01:10
-" Version:      1.7
+" Last Change:  2007-09-03 22:32:43
+" Version:      1.8
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -237,24 +237,29 @@ function! s:EchoFuncInitialize()
     augroup EchoFunc
         autocmd!
         autocmd InsertLeave * call s:RestoreSettings()
-        autocmd BufReadPost * call CheckedEchoFuncStart()
+        autocmd BufRead,BufNewFile * call CheckedEchoFuncStart()
         if has('gui_running')
             menu    &Tools.Echo\ F&unction.Echo\ F&unction\ Start   :call EchoFuncStart()<CR>
             menu    &Tools.Echo\ F&unction.Echo\ Function\ Sto&p    :call EchoFuncStop()<CR>
         endif
 
         if has("balloon_eval")
-            autocmd BufReadPost * call CheckedBalloonDeclarationStart()
+            autocmd BufRead,BufNewFile * call CheckedBalloonDeclarationStart()
             if has('gui_running')
                 menu    &Tools.Echo\ Function.&Balloon\ Declaration\ Start  :call BalloonDeclarationStart()<CR>
                 menu    &Tools.Echo\ Function.Balloon\ Declaration\ &Stop   :call BalloonDeclarationStop()<CR>
             endif
         endif
     augroup END
+
+    call CheckedEchoFuncStart()
+    if has("balloon_eval")
+        call CheckedBalloonDeclarationStart()
+    endif
 endfunction
 
 augroup EchoFunc
-    autocmd BufEnter,BufReadPre * call s:EchoFuncInitialize()
+    autocmd BufRead,BufNewFile * call s:EchoFuncInitialize()
 augroup END
 
 " vim: set et ff=unix sts=4 sw=4:
