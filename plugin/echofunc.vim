@@ -3,7 +3,7 @@
 " Brief:        Echo the function declaration in
 "               the command line for C/C++.
 " Author:       Mingbai <mbbill AT gmail DOT com>
-" Last Change:  2007-09-03 22:32:43
+" Last Change:  2007-09-28 21:23:51
 " Version:      1.8
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
@@ -134,7 +134,7 @@ function! EchoFuncStart()
     let s:ShowMode=&showmode
     let s:CmdHeight=&cmdheight
     inoremap    <silent>    <buffer>    (       (<c-r>=EchoFunc()<cr>
-    inoremap    <silent>    <buffer>    )       )<c-o>:echo ''<cr>
+    inoremap    <silent>    <buffer>    )       )<c-o>:echo<cr>
     inoremap    <silent>    <buffer>    <m-=>   <c-r>=EchoFuncN()<cr>
     inoremap    <silent>    <buffer>    <m-->   <c-r>=EchoFuncP()<cr>
 endfunction
@@ -158,7 +158,7 @@ function! s:RestoreSettings()
         set showmode
     endif
     exec "set cmdheight=".s:CmdHeight
-    echo ""
+    echo
 endfunction
 
 function! BalloonDeclaration()
