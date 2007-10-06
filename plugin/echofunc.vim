@@ -3,7 +3,7 @@
 " Brief:        Echo the function declaration in
 "               the command line for C/C++.
 " Author:       Mingbai <mbbill AT gmail DOT com>
-" Last Change:  2007-09-28 21:23:51
+" Last Change:  2007-10-05 21:19:33
 " Version:      1.8
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
@@ -59,7 +59,7 @@ endfunction
 
 function! s:GetFunctions(fun, fn_only)
     let s:res=[]
-    let ftags=taglist('^'.a:fun.'$')
+    let ftags=taglist('^'.substitute(a:fun,'\~','\\~','').'$')
     if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
 "        \ && a:fn_only
         return
@@ -82,7 +82,7 @@ function! s:GetFunctions(fun, fn_only)
     let s:count=1
     for i in fil_tag
         if has_key(i,'kind') && has_key(i,'name') && has_key(i,'signature')
-            let name=substitute(i.cmd[2:],i.name.'.*','','g').i.name.i.signature
+            let name=substitute(i.cmd[2:],substitute(i.name,'\~','\\~','').'.*','','g').i.name.i.signature
         else
             let name=i.name
         endif
@@ -91,7 +91,7 @@ function! s:GetFunctions(fun, fn_only)
 endfunction
 
 function! EchoFunc()
-    let fun=substitute(getline('.')[:(col('.')-3)],'.\{-}\W\ze\k*$','','g') " get function name
+    let fun=substitute(getline('.')[:(col('.')-3)],'.\{-}\W\(\~\?\k*\)\s*$','\1','g') " get function name
     if fun==''
         return ''
     endif
