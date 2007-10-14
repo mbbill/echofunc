@@ -299,4 +299,4 @@ augroup EchoFunc
     autocmd BufRead,BufNewFile * call s:EchoFuncInitialize()
 augroup END
 
-" vim: set et ff=unix sts=4 sw=4:
+" vim: set et sts=4 sw=4:
