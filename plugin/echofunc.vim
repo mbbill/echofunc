@@ -3,8 +3,8 @@
 " Brief:        Echo the function declaration in
 "               the command line for C/C++.
 " Author:       Mingbai <mbbill AT gmail DOT com>
-" Last Change:  2007-10-08 20:51:58
-" Version:      1.8
+" Last Change:  2007-10-16 23:19:10
+" Version:      1.9
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
