@@ -3,8 +3,8 @@
 " Brief:        Echo the function declaration in
 "               the command line for C/C++.
 " Author:       Mingbai <mbbill AT gmail DOT com>
-" Last Change:  2007-10-16 23:19:10
-" Version:      1.9
+" Last Change:  2007-10-21 15:31:10
+" Version:      1.10
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -84,7 +84,7 @@ function! s:GetFunctions(fun, fn_only)
         if has_key(i,'kind') && has_key(i,'name') && has_key(i,'signature')
             let tmppat=escape(i.name,'[\*~^')
             let tmppat=substitute(tmppat,'\<operator ','operator\\s*','')
-            let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1,\\)\\?','')
+            let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
             let tmppat=tmppat.'.*'
             let name=substitute(i.cmd[2:],tmppat,'','').i.name.i.signature
         else
