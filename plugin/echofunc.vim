@@ -2,9 +2,10 @@
 " File:         echofunc.vim
 " Brief:        Echo the function declaration in
 "               the command line for C/C++.
-" Author:       Mingbai <mbbill AT gmail DOT com>
-" Last Change:  2007-10-21 15:31:10
-" Version:      1.10
+" Authors:      Ming Bai <mbbill AT gmail DOT com>,
+"               Wu Yongwei <wuyongwei AT gmail DOT com>
+" Last Change:  2007-10-28 16:40:54
+" Version:      1.11
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -17,11 +18,12 @@
 "               automatically. Then use alt+-, alt+= to
 "               cycle between function declarations (if exists).
 " Options:      g:EchoFuncTagsLanguages
-"               File types to enable echofunc. Example:
-"               let g:EchoFuncTagsLanguages = ["java","cpp"]
+"                 File types to enable echofunc. Example:
+"                 let g:EchoFuncTagsLanguages = ["java","cpp"]
+"               g:EchoFuncMaxBalloonDeclarations
+"                 Maximum lines to display in balloon declarations.
 "
 " Thanks:       edyfox
-"               Wu YongWei
 "
 "==================================================
 
@@ -39,7 +41,7 @@ function! s:EchoFuncDisplay()
         return
     endif
     set noshowmode
-    let content=substitute(s:res[s:count-1],'^\s*','','')
+    let content=s:res[s:count-1]
     let wincols=&columns
     let allowedheight=&lines/5
     let statusline=(&laststatus==1 && winnr('$')>1) || (&laststatus==2)
@@ -67,7 +69,7 @@ function! s:GetFunctions(fun, fn_only)
     let fil_tag=[]
     for i in ftags
         if has_key(i,'kind') && has_key(i,'name') && has_key(i,'signature')
-            if (i.kind=='p' || i.kind=='f' || a:fn_only == 0) && i.name==a:fun " p is declare, f is defination
+            if (i.kind=='p' || i.kind=='f' || a:fn_only == 0) && i.name==a:fun " p is declare, f is definition
                 let fil_tag+=[i]
             endif
         else
@@ -85,12 +87,55 @@ function! s:GetFunctions(fun, fn_only)
             let tmppat=escape(i.name,'[\*~^')
             let tmppat=substitute(tmppat,'\<operator ','operator\\s*','')
             let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
-            let tmppat=tmppat.'.*'
-            let name=substitute(i.cmd[2:],tmppat,'','').i.name.i.signature
+            let tmppat=tmppat.'\s*(.*'
+            let name=substitute(i.cmd[2:-3],tmppat,'','').i.name.i.signature
+        elseif has_key(i,'kind')
+            if i.kind == 'd'
+                let name='macro '.i.name
+            elseif i.kind == 'c'
+                let name='class '.i.name
+            elseif i.kind == 's'
+                let name='struct '.i.name
+            elseif i.kind == 'u'
+                let name='union '.i.name
+            elseif i.kind == 't'
+                let name='typedef '.i.name
+            elseif i.kind == 'm' || i.kind == 'v'
+                if has_key(i,'cmd')
+                    let tmppat='\(\<'.i.name.'\>.\{-}\);.*'
+                    if i.kind == 'm'
+                        let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
+                    endif
+                    if match(i.cmd[2:-3],tmppat) != -1
+                        let name=substitute(i.cmd[2:-3],tmppat,'\1','')
+                    else
+                        let name='var '.i.name
+                    endif
+                    if i.kind == 'm'
+                        if has_key(i,'class')
+                            let name=name.' <-- class '.i.class
+                        elseif has_key(i,'struct')
+                            let name=name.' <-- struct '.i.struct
+                        elseif has_key(i,'union')
+                            let name=name.' <-- union '.i.union
+                        endif
+                    endif
+                else
+                    let name='var '.i.name
+                endif
+            else
+                let name=i.name
+            endif
         else
             let name=i.name
         endif
-        let s:res+=[name.' ('.(index(fil_tag,i)+1).'/'.len(fil_tag).') '.i.filename]
+        let name=substitute(name,'^\s\+','','')
+        let name=substitute(name,'\s\+',' ','g')
+        let file_line=i.filename
+        if i.cmd > 0
+            let file_line=file_line.':'.i.cmd
+        endif
+        let s:res+=[name.' ('.(index(fil_tag,i)+1).'/'.len(fil_tag).') '.file_line]
     endfor
 endfunction
 
@@ -201,8 +246,12 @@ function! BalloonDeclaration()
     endif
     call s:GetFunctions(name, 0)
     let result = ""
+    let cnt=0
     for item in s:res
-        let result = result . item . "\n"
+        if cnt < g:EchoFuncMaxBalloonDeclarations
+            let result = result . item . "\n"
+        endif
+        let cnt=cnt+1
     endfor
     return strpart(result, 0, len(result) - 1)
 endfunction
@@ -216,6 +265,10 @@ function! BalloonDeclarationStop()
     set balloonexpr=
     set noballooneval
 endfunction
+
+if !exists("g:EchoFuncMaxBalloonDeclarations")
+    let g:EchoFuncMaxBalloonDeclarations=20
+endif
 
 if !exists("g:EchoFuncTagsLanguages")
     let g:EchoFuncTagsLanguages=[
