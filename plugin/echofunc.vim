@@ -4,8 +4,8 @@
 "               the command line for C/C++.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2007-10-28 16:40:54
-" Version:      1.11
+" Last Change:  2007-11-01 21:43:51
+" Version:      1.12
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -63,17 +63,23 @@ function! s:GetFunctions(fun, fn_only)
     let s:res=[]
     let ftags=taglist('^'.escape(a:fun,'[\*~^').'$')
     if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
-"        \ && a:fn_only
         return
     endif
     let fil_tag=[]
     for i in ftags
-        if has_key(i,'kind') && has_key(i,'name') && has_key(i,'signature')
-            if (i.kind=='p' || i.kind=='f' || a:fn_only == 0) && i.name==a:fun " p is declare, f is definition
+        if !has_key(i,'name')
+            continue
+        endif
+        if has_key(i,'kind')
+            " p: prototype/procedure; f: function; m: member
+            if (!a:fn_only || (i.kind=='p' || i.kind=='f') ||
+                        \(i.kind == 'm' && has_key(i,'cmd') &&
+                        \                  match(i.cmd,'(') != -1)) &&
+                        \i.name==a:fun
                 let fil_tag+=[i]
             endif
         else
-            if a:fn_only == 0 && i.name == a:fun
+            if !a:fn_only && i.name == a:fun
                 let fil_tag+=[i]
             endif
         endif
@@ -85,43 +91,57 @@ function! s:GetFunctions(fun, fn_only)
     for i in fil_tag
         if has_key(i,'kind') && has_key(i,'name') && has_key(i,'signature')
             let tmppat=escape(i.name,'[\*~^')
-            let tmppat=substitute(tmppat,'\<operator ','operator\\s*','')
-            let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
+            if &filetype == 'cpp'
+                let tmppat=substitute(tmppat,'\<operator ','operator\\s*','')
+                let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
+            endif
             let tmppat=tmppat.'\s*(.*'
             let name=substitute(i.cmd[2:-3],tmppat,'','').i.name.i.signature
         elseif has_key(i,'kind')
             if i.kind == 'd'
-                let name='macro '.i.name
+                let name='macro ' . i.name
             elseif i.kind == 'c'
-                let name='class '.i.name
+                let name='class ' . i.name
             elseif i.kind == 's'
-                let name='struct '.i.name
+                let name='struct ' . i.name
             elseif i.kind == 'u'
-                let name='union '.i.name
+                let name='union ' . i.name
             elseif i.kind == 't'
-                let name='typedef '.i.name
-            elseif i.kind == 'm' || i.kind == 'v'
-                if has_key(i,'cmd')
-                    let tmppat='\(\<'.i.name.'\>.\{-}\);.*'
-                    if i.kind == 'm'
-                        let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
-                    endif
-                    if match(i.cmd[2:-3],tmppat) != -1
-                        let name=substitute(i.cmd[2:-3],tmppat,'\1','')
-                    else
-                        let name='var '.i.name
-                    endif
-                    if i.kind == 'm'
-                        if has_key(i,'class')
-                            let name=name.' <-- class '.i.class
-                        elseif has_key(i,'struct')
-                            let name=name.' <-- struct '.i.struct
-                        elseif has_key(i,'union')
-                            let name=name.' <-- union '.i.union
-                        endif
-                    endif
+                let name='typedef ' . i.name
+            elseif (match('fpmv',i.kind) != -1) &&
+                        \(has_key(i,'cmd') && i.cmd[0] == '/')
+                let tmppat='\(\<'.i.name.'\>.\{-}\)'
+                if &filetype == 'c' ||
+                            \&filetype == 'cpp' ||
+                            \&filetype == 'cs' ||
+                            \&filetype == 'java' ||
+                            \&filetype == 'javascript'
+                    let tmppat=tmppat . ';.*'
+                elseif &filetype == 'python' &&
+                            \(i.kind == 'm' || i.kind == 'f')
+                    let tmppat=tmppat . ':.*'
+                elseif &filetype == 'tcl' &&
+                            \(i.kind == 'm' || i.kind == 'p')
+                    let tmppat=tmppat . '\({\)\?$'
+                endif
+                if i.kind == 'm' && &filetype == 'cpp'
+                    let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
+                endif
+                if match(i.cmd[2:-3],tmppat) != -1
+                    let name=substitute(i.cmd[2:-3],tmppat,'\1','')
+                elseif i.kind == 'v'
+                    let name='var ' . i.name
                 else
-                    let name='var '.i.name
+                    let name=i.name
+                endif
+                if i.kind == 'm'
+                    if has_key(i,'class')
+                        let name=name . ' <-- class ' . i.class
+                    elseif has_key(i,'struct')
+                        let name=name . ' <-- struct ' . i.struct
+                    elseif has_key(i,'union')
+                        let name=name . ' <-- union ' . i.union
+                    endif
                 endif
             else
                 let name=i.name
@@ -130,10 +150,11 @@ function! s:GetFunctions(fun, fn_only)
             let name=i.name
         endif
         let name=substitute(name,'^\s\+','','')
+        let name=substitute(name,'\s\+$','','')
         let name=substitute(name,'\s\+',' ','g')
         let file_line=i.filename
         if i.cmd > 0
-            let file_line=file_line.':'.i.cmd
+            let file_line=file_line . ':' . i.cmd
         endif
         let s:res+=[name.' ('.(index(fil_tag,i)+1).'/'.len(fil_tag).') '.file_line]
     endfor
@@ -226,7 +247,7 @@ function! BalloonDeclaration()
     let line=getline(v:beval_lnum)
     let pos=v:beval_col - 1
     let endpos=match(line, '\W', pos)
-    if endpos != -1
+    if endpos != -1 && &filetype == 'cpp'
         if v:beval_text == 'operator'
             if line[endpos :] =~ '^\s*\(new\(\[]\)\?\|delete\(\[]\)\?\|[[\]+\-*/%<>=!~\^&|]\+\|()\)'
                 let endpos=matchend(line, '^\s*\(new\(\[]\)\?\|delete\(\[]\)\?\|[[\]+\-*/%<>=!~\^&|]\+\|()\)',endpos)
