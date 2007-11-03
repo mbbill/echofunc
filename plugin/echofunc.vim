@@ -6,13 +6,14 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2007-11-03 08:20:37
+" Last Change:  2007-11-03 09:39:30
 " Version:      1.13
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
-"                  file including signature field.
-"                  ctags --fields=+S .
+"                  file including the language and
+"                  signature fields.
+"                    ctags -R --fields=+S .
 "
 " Usage:        When you type '(' after a function name
 "               in insert mode, the function declaration
@@ -25,9 +26,15 @@
 "               macro name, etc. This works with when
 "               +balloon_eval is compiled in.
 "
-" Options:      g:EchoFuncTagsLanguages
-"                 File types to enable echofunc. Example:
-"                 let g:EchoFuncTagsLanguages = ["java","cpp"]
+" Options:      g:EchoFuncLangsDict
+"                 Dictionary to map the Vim file types to
+"                 tags languages that should be used. You do
+"                 not need to touch it in most cases.
+"               g:EchoFuncLangsUsed
+"                 File types to enable echofunc, in case you
+"                 do not want to use EchoFunc on all file
+"                 types supported. Example:
+"                   let g:EchoFuncLangsUsed = ["java","cpp"]
 "               g:EchoFuncMaxBalloonDeclarations
 "                 Maximum lines to display in balloon declarations.
 "
@@ -77,6 +84,15 @@ function! s:GetFunctions(fun, fn_only)
     for i in ftags
         if !has_key(i,'name')
             continue
+        endif
+        if has_key(i,'language')
+            if !has_key(g:EchoFuncLangsDict,&filetype)
+                continue
+            endif
+            if eval('index(g:EchoFuncLangsDict.' . &filetype . ',i.language)')
+                        \== -1
+                continue
+            endif
         endif
         if has_key(i,'kind')
             " p: prototype/procedure; f: function; m: member
@@ -295,49 +311,54 @@ function! BalloonDeclarationStop()
     set noballooneval
 endfunction
 
+if !exists('g:EchoFuncLangsDict')
+    let g:EchoFuncLangsDict={
+                \ 'asm':['Asm'],
+                \ 'aspvbs':['Asp'],
+                \ 'awk':['Awk'],
+                \ 'basic':['Basic'],
+                \ 'c':['C','C++'],
+                \ 'cpp':['C','C++'],
+                \ 'cs':['C#'],
+                \ 'cobol':['Cobol'],
+                \ 'eiffel':['Eiffel'],
+                \ 'erlang':['Erlang'],
+                \ 'fortran':['Fortran'],
+                \ 'html':['HTML'],
+                \ 'java':['Java'],
+                \ 'javascript':['JavaScript'],
+                \ 'lisp':['Lisp'],
+                \ 'lua':['Lua'],
+                \ 'make':['Make'],
+                \ 'pascal':['Pascal'],
+                \ 'perl':['Perl'],
+                \ 'php':['PHP'],
+                \ 'python':['Python'],
+                \ 'rexx':['REXX'],
+                \ 'ruby':['Ruby'],
+                \ 'scheme':['Scheme'],
+                \ 'sh':['Sh'],
+                \ 'zsh':['Sh'],
+                \ 'sql':['SQL'],
+                \ 'slang':['SLang'],
+                \ 'sml':['SML'],
+                \ 'tcl':['Tcl'],
+                \ 'vera':['Vera'],
+                \ 'verilog':['verilog'],
+                \ 'vim':['Vim'],
+                \ 'yacc':['YACC']}
+endif
+
+if !exists("g:EchoFuncLangsUsed")
+    let g:EchoFuncLangsUsed=sort(keys(g:EchoFuncLangsDict))
+endif
+
 if !exists("g:EchoFuncMaxBalloonDeclarations")
     let g:EchoFuncMaxBalloonDeclarations=20
 endif
 
-if !exists("g:EchoFuncTagsLanguages")
-    let g:EchoFuncTagsLanguages=[
-                \ "asm",
-                \ "aspvbs",
-                \ "awk",
-                \ "c",
-                \ "cpp",
-                \ "cs",
-                \ "cobol",
-                \ "eiffel",
-                \ "erlang",
-                \ "fortran",
-                \ "html",
-                \ "java",
-                \ "javascript",
-                \ "lisp",
-                \ "lua",
-                \ "make",
-                \ "pascal",
-                \ "perl",
-                \ "php",
-                \ "plsql",
-                \ "python",
-                \ "rexx",
-                \ "ruby",
-                \ "scheme",
-                \ "sh",
-                \ "zsh",
-                \ "slang",
-                \ "sml",
-                \ "tcl",
-                \ "vera",
-                \ "verilog",
-                \ "vim",
-                \ "yacc"]
-endif
-
 function! s:CheckTagsLanguage(filetype)
-    return count(g:EchoFuncTagsLanguages, a:filetype)
+    return index(g:EchoFuncLangsUsed, a:filetype) != -1
 endfunction
 
 function! CheckedEchoFuncStart()
