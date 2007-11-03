@@ -6,14 +6,14 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2007-11-03 09:39:30
-" Version:      1.13
+" Last Change:  2007-11-03 10:07:00
+" Version:      1.14
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
 "                  file including the language and
 "                  signature fields.
-"                    ctags -R --fields=+S .
+"                    ctags -R --fields=+lS .
 "
 " Usage:        When you type '(' after a function name
 "               in insert mode, the function declaration
