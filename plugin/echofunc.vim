@@ -1,11 +1,13 @@
 "==================================================
 " File:         echofunc.vim
 " Brief:        Echo the function declaration in
-"               the command line for C/C++.
+"               the command line for C/C++, as well
+"               as other languages that ctags
+"               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2007-11-01 21:43:51
-" Version:      1.12
+" Last Change:  2007-11-03 08:20:37
+" Version:      1.13
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -17,6 +19,12 @@
 "               will be displayed in the command line
 "               automatically. Then use alt+-, alt+= to
 "               cycle between function declarations (if exists).
+"
+"               Another feature is to provide a balloon tip
+"               when the mouse cursor hovers a function name,
+"               macro name, etc. This works with when
+"               +balloon_eval is compiled in.
+"
 " Options:      g:EchoFuncTagsLanguages
 "                 File types to enable echofunc. Example:
 "                 let g:EchoFuncTagsLanguages = ["java","cpp"]
