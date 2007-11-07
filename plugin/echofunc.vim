@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2007-11-03 10:07:00
-" Version:      1.14
+" Last Change:  2007-11-06 19:50:49
+" Version:      1.15
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -118,8 +118,10 @@ function! s:GetFunctions(fun, fn_only)
             if &filetype == 'cpp'
                 let tmppat=substitute(tmppat,'\<operator ','operator\\s*','')
                 let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
+                let tmppat=tmppat . '\s*(.*'
+            else
+                let tmppat=tmppat . '\>.*'
             endif
-            let tmppat=tmppat.'\s*(.*'
             let name=substitute(i.cmd[2:-3],tmppat,'','').i.name.i.signature
         elseif has_key(i,'kind')
             if i.kind == 'd'
@@ -130,9 +132,7 @@ function! s:GetFunctions(fun, fn_only)
                 let name='struct ' . i.name
             elseif i.kind == 'u'
                 let name='union ' . i.name
-            elseif i.kind == 't'
-                let name='typedef ' . i.name
-            elseif (match('fpmv',i.kind) != -1) &&
+            elseif (match('fpmvt',i.kind) != -1) &&
                         \(has_key(i,'cmd') && i.cmd[0] == '/')
                 let tmppat='\(\<'.i.name.'\>.\{-}\)'
                 if &filetype == 'c' ||
@@ -153,6 +153,11 @@ function! s:GetFunctions(fun, fn_only)
                 endif
                 if match(i.cmd[2:-3],tmppat) != -1
                     let name=substitute(i.cmd[2:-3],tmppat,'\1','')
+                    if i.kind == 't' && name !~ '^\s*typedef\>'
+                        let name='typedef ' . i.name
+                    endif
+                elseif i.kind == 't'
+                    let name='typedef ' . i.name
                 elseif i.kind == 'v'
                     let name='var ' . i.name
                 else
