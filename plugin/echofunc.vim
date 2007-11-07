@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2007-11-06 19:50:49
-" Version:      1.15
+" Last Change:  2007-11-07 21:14:14
+" Version:      1.16
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -18,8 +18,10 @@
 " Usage:        When you type '(' after a function name
 "               in insert mode, the function declaration
 "               will be displayed in the command line
-"               automatically. Then use alt+-, alt+= to
-"               cycle between function declarations (if exists).
+"               automatically. Then you may use Alt+- and
+"               Alt+= (configurable via EchoFuncKeyPrev
+"               and EchoFuncKeyNext) to cycle between
+"               function declarations (if exists).
 "
 "               Another feature is to provide a balloon tip
 "               when the mouse cursor hovers a function name,
@@ -37,6 +39,10 @@
 "                   let g:EchoFuncLangsUsed = ["java","cpp"]
 "               g:EchoFuncMaxBalloonDeclarations
 "                 Maximum lines to display in balloon declarations.
+"               g:EchoFuncKeyNext
+"                 Key to echo the next function
+"               g:EchoFuncKeyPrev
+"                 Key to echo the previous function
 "
 " Thanks:       edyfox
 "
@@ -246,8 +252,8 @@ function! EchoFuncStart()
     let s:CmdHeight=&cmdheight
     inoremap    <silent>    <buffer>    (       (<c-r>=EchoFunc()<cr>
     inoremap    <silent>    <buffer>    )       )<c-o>:echo<cr>
-    inoremap    <silent>    <buffer>    <m-=>   <c-r>=EchoFuncN()<cr>
-    inoremap    <silent>    <buffer>    <m-->   <c-r>=EchoFuncP()<cr>
+    exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyNext . ' <c-r>=EchoFuncN()<cr>'
+    exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyPrev . ' <c-r>=EchoFuncP()<cr>'
 endfunction
 
 function! EchoFuncStop()
@@ -256,8 +262,8 @@ function! EchoFuncStop()
     endif
     iunmap      <buffer>    (
     iunmap      <buffer>    )
-    iunmap      <buffer>    <m-=>
-    iunmap      <buffer>    <m-->
+    exec 'iunmap <buffer> ' . g:EchoFuncKeyNext
+    exec 'iunmap <buffer> ' . g:EchoFuncKeyPrev
     unlet b:EchoFuncStarted
 endfunction
 
@@ -360,6 +366,14 @@ endif
 
 if !exists("g:EchoFuncMaxBalloonDeclarations")
     let g:EchoFuncMaxBalloonDeclarations=20
+endif
+
+if !exists("g:EchoFuncKeyNext")
+    let g:EchoFuncKeyNext='<M-=>'
+endif
+
+if !exists("g:EchoFuncKeyPrev")
+    let g:EchoFuncKeyPrev='<M-->'
 endif
 
 function! s:CheckTagsLanguage(filetype)
