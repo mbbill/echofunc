@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2007-12-26 21:41:48
-" Version:      1.18
+" Last Change:  2009-04-30 21:17:26
+" Version:      1.19
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -44,7 +44,7 @@
 "               g:EchoFuncKeyPrev
 "                 Key to echo the previous function
 "
-" Thanks:       edyfox
+" Thanks:       edyfox minux
 "
 "==================================================
 
@@ -250,10 +250,15 @@ function! EchoFuncStart()
     let b:EchoFuncStarted=1
     let s:ShowMode=&showmode
     let s:CmdHeight=&cmdheight
-    inoremap    <silent>    <buffer>    (       (<c-r>=EchoFunc()<cr>
-    inoremap    <silent>    <buffer>    )       <c-\><c-o>:echo<cr>)
+    inoremap <silent> <buffer>  (   (<c-r>=EchoFunc()<cr>
+    inoremap <silent> <buffer>  )    <c-r>=EchoFuncClear()<cr>)
     exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyNext . ' <c-r>=EchoFuncN()<cr>'
     exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyPrev . ' <c-r>=EchoFuncP()<cr>'
+endfunction
+
+function! EchoFuncClear()
+    echo ''
+    return ''
 endfunction
 
 function! EchoFuncStop()
