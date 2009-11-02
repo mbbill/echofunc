@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2009-04-30 21:17:26
-" Version:      1.19
+" Last Change:  2009-11-02 19:05:33
+" Version:      1.20
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -82,9 +82,17 @@ endfunction
 
 function! s:GetFunctions(fun, fn_only)
     let s:res=[]
-    let ftags=taglist('^'.escape(a:fun,'[\*~^').'$')
+    let funpat=escape(a:fun,'[\*~^')
+    let ftags=taglist('^'.funpat.'$')
     if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
-        return
+        if &filetype=='cpp'
+            " Namespaces may be omitted
+            let funpat='\([A-Za-z_][A-Za-z_0-9]*::\)*'.funpat
+            let ftags=taglist('^'.funpat.'$')
+            if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
+                return
+            endif
+        endif
     endif
     let fil_tag=[]
     for i in ftags
@@ -105,8 +113,11 @@ function! s:GetFunctions(fun, fn_only)
             if (!a:fn_only || (i.kind=='p' || i.kind=='f') ||
                         \(i.kind == 'm' && has_key(i,'cmd') &&
                         \                  match(i.cmd,'(') != -1)) &&
-                        \i.name==a:fun
-                let fil_tag+=[i]
+                        \i.name=~funpat
+                if &filetype!='cpp' || !has_key(i,'class') ||
+                            \i.name!~'::' || i.name=~i.class
+                    let fil_tag+=[i]
+                endif
             endif
         else
             if !a:fn_only && i.name == a:fun
@@ -120,11 +131,12 @@ function! s:GetFunctions(fun, fn_only)
     let s:count=1
     for i in fil_tag
         if has_key(i,'kind') && has_key(i,'name') && has_key(i,'signature')
-            let tmppat=escape(i.name,'[\*~^')
+            let tmppat=substitute(escape(i.name,'[\*~^'),'^.*::','','')
             if &filetype == 'cpp'
                 let tmppat=substitute(tmppat,'\<operator ','operator\\s*','')
-                let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
+                "let tmppat=substitute(tmppat,'^\(.*::\)','\\(\1\\)\\?','')
                 let tmppat=tmppat . '\s*(.*'
+                let tmppat='\([A-Za-z_][A-Za-z_0-9]*::\)*'.tmppat
             else
                 let tmppat=tmppat . '\>.*'
             endif
