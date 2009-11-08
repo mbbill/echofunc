@@ -6,7 +6,7 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2009-11-08 23:46:22
+" Last Change:  2009-11-08 23:51:38
 " Version:      1.21
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
@@ -87,8 +87,7 @@ function! s:GetFunctions(fun, fn_only)
     if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
         if &filetype=='cpp' && funpat!~'^\(catch\|if\|for\|while\|switch\)$'
             " Namespaces may be omitted
-            let funpat='::'.funpat
-            let ftags=taglist(funpat.'$')
+            let ftags=taglist('::'.funpat.'$')
             if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
                 return
             endif
