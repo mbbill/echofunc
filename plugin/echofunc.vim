@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2009-11-02 19:05:33
-" Version:      1.20
+" Last Change:  2009-11-08 23:46:22
+" Version:      1.21
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -85,10 +85,10 @@ function! s:GetFunctions(fun, fn_only)
     let funpat=escape(a:fun,'[\*~^')
     let ftags=taglist('^'.funpat.'$')
     if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
-        if &filetype=='cpp'
+        if &filetype=='cpp' && funpat!~'^\(catch\|if\|for\|while\|switch\)$'
             " Namespaces may be omitted
-            let funpat='\([A-Za-z_][A-Za-z_0-9]*::\)*'.funpat
-            let ftags=taglist('^'.funpat.'$')
+            let funpat='::'.funpat
+            let ftags=taglist(funpat.'$')
             if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
                 return
             endif
