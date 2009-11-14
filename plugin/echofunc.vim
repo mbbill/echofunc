@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2009-11-08 23:51:38
-" Version:      1.21
+" Last Change:  2009-11-14 14:20:29
+" Version:      1.22
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -28,6 +28,15 @@
 "               macro name, etc. This works with when
 "               +balloon_eval is compiled in.
 "
+"               Because the message line often cleared by
+"               some other plugins (e.g. ominicomplete), an
+"               other choice is to show message in status line.
+"               First, add  %{EchoFuncGetStatusLine()}  to
+"               your 'statusline' option.
+"               Second, add the following line to your vimrc
+"               let g:EchoFuncShowOnStatus = 1
+"               to avoid echoing function name in message line.
+"
 " Options:      g:EchoFuncLangsDict
 "                 Dictionary to map the Vim file types to
 "                 tags languages that should be used. You do
@@ -43,6 +52,10 @@
 "                 Key to echo the next function
 "               g:EchoFuncKeyPrev
 "                 Key to echo the previous function
+"               g:EchoFuncShowOnStatus
+"                 Show function name on status line. NOTE,
+"                 you should manually add %{EchoFuncGetStatusLine()}
+"                 to your 'statusline' option.
 "
 " Thanks:       edyfox minux
 "
@@ -54,11 +67,22 @@ if v:version < 700
      finish
 endif
 
+if !exists("g:EchoFuncShowOnStatus")
+    let g:EchoFuncShowOnStatus = 0
+endif
+
 let s:res=[]
 let s:count=1
 
-function! s:EchoFuncDisplay()
+function! EchoFuncGetStatusLine()
     if len(s:res) == 0
+        return ""
+    endif
+    return substitute(s:res[s:count-1],'^\s*','','')
+endfunction
+
+function! s:EchoFuncDisplay()
+    if len(s:res) == 0 || g:EchoFuncShowOnStatus == 1
         return
     endif
     set noshowmode
