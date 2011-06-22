@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2009-11-14 14:20:29
-" Version:      1.22
+" Last Change:  2011-06-22 16:34:01
+" Version:      1.23
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -49,13 +49,15 @@
 "               g:EchoFuncMaxBalloonDeclarations
 "                 Maximum lines to display in balloon declarations.
 "               g:EchoFuncKeyNext
-"                 Key to echo the next function
+"                 Key to echo the next function.
 "               g:EchoFuncKeyPrev
-"                 Key to echo the previous function
+"                 Key to echo the previous function.
 "               g:EchoFuncShowOnStatus
 "                 Show function name on status line. NOTE,
 "                 you should manually add %{EchoFuncGetStatusLine()}
 "                 to your 'statusline' option.
+"               g:EchoFuncAutoStartBalloonDeclaration
+"                 Automatically start balloon declaration if not 0.
 "
 " Thanks:       edyfox minux
 "
@@ -65,10 +67,6 @@
 if v:version < 700
      echohl ErrorMsg | echomsg "Echofunc.vim needs vim version >= 7.0!" | echohl None
      finish
-endif
-
-if !exists("g:EchoFuncShowOnStatus")
-    let g:EchoFuncShowOnStatus = 0
 endif
 
 let s:res=[]
@@ -416,6 +414,14 @@ if !exists("g:EchoFuncKeyPrev")
     let g:EchoFuncKeyPrev='<M-->'
 endif
 
+if !exists("g:EchoFuncShowOnStatus")
+    let g:EchoFuncShowOnStatus = 0
+endif
+
+if !exists("g:EchoFuncAutoStartBalloonDeclaration")
+    let g:EchoFuncAutoStartBalloonDeclaration = 1
+endif
+
 function! s:CheckTagsLanguage(filetype)
     return index(g:EchoFuncLangsUsed, a:filetype) != -1
 endfunction
@@ -427,7 +433,7 @@ function! CheckedEchoFuncStart()
 endfunction
 
 function! CheckedBalloonDeclarationStart()
-    if s:CheckTagsLanguage(&filetype)
+    if s:CheckTagsLanguage(&filetype) && g:EchoFuncAutoStartBalloonDeclaration
         call BalloonDeclarationStart()
     endif
 endfunction
