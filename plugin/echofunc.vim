@@ -74,15 +74,20 @@ let s:count=1
 
 function! EchoFuncGetStatusLine()
     if len(s:res) == 0
-        return ""
+        return ''
     endif
     return substitute(s:res[s:count-1],'^\s*','','')
 endfunction
 
 function! s:EchoFuncDisplay()
-    if len(s:res) == 0 || g:EchoFuncShowOnStatus == 1
+    if len(s:res) == 0 
         return
     endif
+    if g:EchoFuncShowOnStatus == 1
+        exec "redrawstatus"
+        return
+    endif
+
     set noshowmode
     let content=s:res[s:count-1]
     let wincols=&columns
@@ -291,6 +296,7 @@ endfunction
 
 function! EchoFuncClear()
     echo ''
+    let s:res=[]
     return ''
 endfunction
 
@@ -407,11 +413,19 @@ if !exists("g:EchoFuncMaxBalloonDeclarations")
 endif
 
 if !exists("g:EchoFuncKeyNext")
-    let g:EchoFuncKeyNext='<M-=>'
+    if has ("mac")
+        let g:EchoFuncKeyNext='≠'
+    else
+        let g:EchoFuncKeyNext='<M-=>'
+    endif
 endif
 
 if !exists("g:EchoFuncKeyPrev")
-    let g:EchoFuncKeyPrev='<M-->'
+    if has ("mac")
+        let g:EchoFuncKeyPrev='±'
+    else
+        let g:EchoFuncKeyPrev='<M-->'
+    endif
 endif
 
 if !exists("g:EchoFuncShowOnStatus")
