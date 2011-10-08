@@ -7,7 +7,7 @@
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
 " Last Change:  2011-06-22 16:34:01
-" Version:      1.23
+" Version:      1.3
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
@@ -41,27 +41,53 @@
 "                 Dictionary to map the Vim file types to
 "                 tags languages that should be used. You do
 "                 not need to touch it in most cases.
+"
 "               g:EchoFuncLangsUsed
 "                 File types to enable echofunc, in case you
 "                 do not want to use EchoFunc on all file
 "                 types supported. Example:
 "                   let g:EchoFuncLangsUsed = ["java","cpp"]
+"
 "               g:EchoFuncMaxBalloonDeclarations
 "                 Maximum lines to display in balloon declarations.
+"
 "               g:EchoFuncKeyNext
 "                 Key to echo the next function.
+"
 "               g:EchoFuncKeyPrev
 "                 Key to echo the previous function.
+"
 "               g:EchoFuncShowOnStatus
 "                 Show function name on status line. NOTE,
 "                 you should manually add %{EchoFuncGetStatusLine()}
 "                 to your 'statusline' option.
+"
 "               g:EchoFuncAutoStartBalloonDeclaration
 "                 Automatically start balloon declaration if not 0.
 "
-" Thanks:       edyfox minux
+"               g:EchoFuncPathMappingEnabled
+"               g:EchoFuncPathMapping
+"                 The new feature added by Zhao Cai provides ability
+"                 to shorten file path in some specific directory. e.g.
+"                 /home/username/veryveryvery/long/file/path/blabla
+"                 could be showed as
+"                 ~/veryveryvery/long/file/path/blabla
+"                 If you want to disable this feature, add
+"                 let g:EchoFuncPathMappingEnabled = 0
+"                 to your vimrc. It's enabled by default.
+"                 To add more mappings in g:EchoFuncPathMapping, search
+"                 this script and you will know how to do it.
+"
+"
+" Thanks:       edyfox
+"               minux
+"               Zhao Cai
 "
 "==================================================
+
+if &compatible == 1
+    finish
+endif
 
 " Vim version 7.x is needed.
 if v:version < 700
@@ -72,15 +98,39 @@ endif
 let s:res=[]
 let s:count=1
 
+if !exists("g:EchoFuncPathMapping")
+	" Note: longest match first
+	let g:EchoFuncPathMapping = [
+				\ [expand("$HOME") , '~'],
+				\ [expand("$VIM") , '$VIM']
+				\]
+endif
+
+if !exists("g:EchoFuncPathMappingEnabled")
+	let g:EchoFuncPathMappingEnabled = 1
+endif
+
+func! s:EchoFuncPathMapping(path)
+    if g:EchoFuncPathMappingEnabled != 1
+        return a:path
+    endif
+	let l:path = a:path
+	for item in g:EchoFuncPathMapping
+		"let l:path = substitute(l:path, escape(item[0],'/'), escape(item[1],'/'), 'ge' )
+		let l:path = substitute(l:path, '\V'.escape(item[0],'\'), item[1], 'ge' )
+	endfor
+	return l:path
+endf
+
 function! EchoFuncGetStatusLine()
     if len(s:res) == 0
         return ''
     endif
-    return substitute(s:res[s:count-1],'^\s*','','')
+    return '[' . substitute(s:res[s:count-1],'^\s*','','') . ']'
 endfunction
 
 function! s:EchoFuncDisplay()
-    if len(s:res) == 0 
+    if len(s:res) == 0
         return
     endif
     if g:EchoFuncShowOnStatus == 1
@@ -107,14 +157,30 @@ function! s:EchoFuncDisplay()
     echohl Type | echo content | echohl None
 endfunction
 
+" add this function to avoid E432
+function! s:CallTagList(str)
+    let ftags = []
+    try
+        let ftags=taglist(a:str)
+    catch /^Vim\%((\a\+)\)\=:E/
+        " if error occured, reset tagbsearch option and try again.
+        let bak=&tagbsearch
+        set notagbsearch
+        let ftags=taglist(a:str)
+        let &tagbsearch=bak
+    endtry
+    return ftags
+endfunction
+
 function! s:GetFunctions(fun, fn_only)
     let s:res=[]
     let funpat=escape(a:fun,'[\*~^')
-    let ftags=taglist('^'.funpat.'$')
+    let ftags=s:CallTagList('^'.funpat.'$')
+
     if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
         if &filetype=='cpp' && funpat!~'^\(catch\|if\|for\|while\|switch\)$'
             " Namespaces may be omitted
-            let ftags=taglist('::'.funpat.'$')
+            let ftags=s:CallTagList('::'.funpat.'$')
             if (type(ftags)==type(0) || ((type(ftags)==type([])) && ftags==[]))
                 return
             endif
@@ -225,7 +291,7 @@ function! s:GetFunctions(fun, fn_only)
         let name=substitute(name,'^\s\+','','')
         let name=substitute(name,'\s\+$','','')
         let name=substitute(name,'\s\+',' ','g')
-        let file_line=i.filename
+        let file_line=s:EchoFuncPathMapping(i.filename)
         if i.cmd > 0
             let file_line=file_line . ':' . i.cmd
         endif
