@@ -6,8 +6,8 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2012-02-04 16:00:36
-" Version:      1.3
+" Last Change:  2012-02-04 19:18:00
+" Version:      1.4
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
 "               2. Use the command below to create tags
