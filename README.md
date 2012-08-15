@@ -13,5 +13,5 @@ $ctags -R --fields=+lS .
 
 ### Screenshot
 ![](https://sites.google.com/site/mbbill/echofunc_demo1.png)
-![](https://sites.google.com/site/mbbill/echofunc_demo1.png)
+![](https://sites.google.com/site/mbbill/echofunc_demo2.png)
 
