@@ -381,7 +381,7 @@ function! EchoFuncStop()
     unlet b:EchoFuncStarted
 endfunction
 
-function! s:RestoreSettings()
+function! RestoreSettings()
     if !exists('b:EchoFuncStarted')
         return
     endif
@@ -525,7 +525,7 @@ endfunction
 function! s:EchoFuncInitialize()
     augroup EchoFunc
         autocmd!
-        autocmd InsertLeave * call s:RestoreSettings()
+        autocmd InsertLeave * call RestoreSettings()
         autocmd BufRead,BufNewFile * call CheckedEchoFuncStart()
         if has('gui_running')
             menu    &Tools.Echo\ F&unction.Echo\ F&unction\ Start   :call EchoFuncStart()<CR>
