@@ -6,7 +6,7 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2012-02-04 19:18:00
+" Last Change:  2013-03-24 17:09:24
 " Version:      2.0
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
@@ -381,7 +381,7 @@ function! EchoFuncStop()
     unlet b:EchoFuncStarted
 endfunction
 
-function! RestoreSettings()
+function! EchoFuncRestoreSettings()
     if !exists('b:EchoFuncStarted')
         return
     endif
@@ -525,7 +525,7 @@ endfunction
 function! s:EchoFuncInitialize()
     augroup EchoFunc
         autocmd!
-        autocmd InsertLeave * call RestoreSettings()
+        autocmd InsertLeave * call EchoFuncRestoreSettings()
         autocmd BufRead,BufNewFile * call CheckedEchoFuncStart()
         if has('gui_running')
             menu    &Tools.Echo\ F&unction.Echo\ F&unction\ Start   :call EchoFuncStart()<CR>
