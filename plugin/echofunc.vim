@@ -6,7 +6,7 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2013-03-24 17:09:24
+" Last Change:  2014-02-17 16:05:37
 " Version:      2.0
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
@@ -75,6 +75,13 @@
 "                 If you want to disable this feature, add
 "                 let g:EchoFuncPathMappingEnabled = 0
 "                 to your vimrc. It's enabled by default.
+"                 More truncate styles are supported (by LiTuX):
+"                 2: /user/local/include/foo/bar/baz => foo/bar/baz
+"                 3: /user/local/include/foo/bar/baz => local:foo/bar/baz
+"                 4: /user/local/include/foo/bar/baz => /u/l/i/f/b/baz
+"                 5: same as 4
+"                 6: /user/local/include/foo/bar/baz => foo/b/baz
+"                 7: /user/local/include/foo/bar/baz => local:foo/b/baz
 "                 To add more mappings in g:EchoFuncPathMapping, search
 "                 this script and you will know how to do it.
 "
@@ -103,27 +110,70 @@ let s:res=[]
 let s:count=1
 
 if !exists("g:EchoFuncPathMapping")
-	" Note: longest match first
-	let g:EchoFuncPathMapping = [
-				\ [expand("$HOME") , '~'],
-				\ [expand("$VIM") , '$VIM']
-				\]
+    " Note: longest match first
+    let g:EchoFuncPathMapping = [
+                \ [expand("$HOME") , '~'],
+                \ [expand("$VIM") , '$VIM']
+                \]
 endif
 
 if !exists("g:EchoFuncPathMappingEnabled")
-	let g:EchoFuncPathMappingEnabled = 1
+    let g:EchoFuncPathMappingEnabled = 1
 endif
 
+func! s:EchoFuncTruncatePath(path, style)
+    " style == 1: do nothing;
+    " mask  2: truncate `include`:
+    "       2: truncate `include` path/file;
+    "       3: truncate `include` parent:path/file;
+    " mask  4: truncate path /u/l/i/p/file
+    "       5: same as 4;
+    "       6: 2 then 4: p/file             TODO, now is path/f/b/file
+    "       7: 3 then 4: parent:p/file      TODO, now is parent:path/b/file
+    let fnamelist = '.,~!@#$%_=+'
+    let fnamenorm = '0-9a-zA-Z'
+    if and(a:style, 2) == 2
+        if and(a:style, 1) == 0
+            " */include/foo/file => foo/file
+            let shorten = substitute(a:path, '.*[\/]\cinclude\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\@=\)', '', '')
+        else
+            " */parent/include/path/file => parent:path/file
+            let idx = matchend(a:path, '.*[\/]\cinclude\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\)')
+            if idx < 11                 " actually -1
+                let shorten = a:path
+            endif
+            let parent = a:path[: idx-11]
+            let pidx = matchend(parent, '.*\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\)')
+            if pidx > 0
+                let parent = parent[pidx-1 :]
+            endif
+            let shorten = parent.':'.a:path[idx-1 :]
+        endif
+    else
+        let shorten = a:path
+    endif
+    if and(a:style, 4) == 4
+        " truncate the path like guitablabel's default:
+        " /foo/bar/baz/foobar/barfoo/file => /f/b/b/f/b/file
+        " Can not truncate strange path
+        let shorten = substitute(shorten, '\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\@=\)['.fnamelist.']*['.fnamenorm.']\zs.\{-}\ze\%(\/\|\\['.fnamelist.fnamenorm.']\)', '', 'g')
+    endif
+    return shorten
+endf
+
 func! s:EchoFuncPathMapping(path)
-    if g:EchoFuncPathMappingEnabled != 1
+    if g:EchoFuncPathMappingEnabled == 0
         return a:path
     endif
-	let l:path = a:path
-	for item in g:EchoFuncPathMapping
-		"let l:path = substitute(l:path, escape(item[0],'/'), escape(item[1],'/'), 'ge' )
-		let l:path = substitute(l:path, '\V'.escape(item[0],'\'), item[1], 'ge' )
-	endfor
-	return l:path
+    let l:path = a:path
+    for item in g:EchoFuncPathMapping
+        "let l:path = substitute(l:path, escape(item[0],'/'), escape(item[1],'/'), 'ge' )
+        let l:path = substitute(l:path, '\V'.escape(item[0],'\'), item[1], 'ge' )
+    endfor
+    if g:EchoFuncPathMappingEnabled > 1
+        let l:path = s:EchoFuncTruncatePath(l:path, g:EchoFuncPathMappingEnabled)
+    endif
+    return l:path
 endf
 
 function! EchoFuncGetStatusLine()
