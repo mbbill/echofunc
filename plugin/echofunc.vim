@@ -6,7 +6,7 @@
 "               supports.
 " Authors:      Ming Bai <mbbill AT gmail DOT com>,
 "               Wu Yongwei <wuyongwei AT gmail DOT com>
-" Last Change:  2014-02-17 16:05:37
+" Last Change:  2014-02-17 16:49:55
 " Version:      2.0
 "
 " Install:      1. Put echofunc.vim to /plugin directory.
@@ -132,25 +132,26 @@ func! s:EchoFuncTruncatePath(path, style)
     "       7: 3 then 4: parent:p/file      TODO, now is parent:path/b/file
     let fnamelist = '.,~!@#$%_=+'
     let fnamenorm = '0-9a-zA-Z'
+    let trim = substitute(a:path, '\\\.\|\/\.', '', 'g')
     if and(a:style, 2) == 2
         if and(a:style, 1) == 0
             " */include/foo/file => foo/file
-            let shorten = substitute(a:path, '.*[\/]\cinclude\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\@=\)', '', '')
+            let shorten = substitute(trim, '.*[\/]\cinclude\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\@=\)', '', '')
         else
             " */parent/include/path/file => parent:path/file
-            let idx = matchend(a:path, '.*[\/]\cinclude\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\)')
+            let idx = matchend(trim, '.*[\/]\cinclude\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\)')
             if idx < 11                 " actually -1
-                let shorten = a:path
+                let shorten = trim
             endif
-            let parent = a:path[: idx-11]
+            let parent = trim[: idx-11]
             let pidx = matchend(parent, '.*\%(\/\|\\\%(['.fnamelist.fnamenorm.']\)\)')
             if pidx > 0
                 let parent = parent[pidx-1 :]
             endif
-            let shorten = parent.':'.a:path[idx-1 :]
+            let shorten = parent.':'.trim[idx-1 :]
         endif
     else
-        let shorten = a:path
+        let shorten = trim
     endif
     if and(a:style, 4) == 4
         " truncate the path like guitablabel's default:
