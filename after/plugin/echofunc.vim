@@ -106,9 +106,6 @@ endif
 let s:cpo_save=&cpo
 set cpo&vim
 
-let s:res=[]
-let s:count=1
-
 if !exists("g:EchoFuncPathMapping")
     " Note: longest match first
     let g:EchoFuncPathMapping = [
@@ -190,14 +187,18 @@ func! s:EchoFuncPathMapping(path)
 endf
 
 function! EchoFuncGetStatusLine()
-    if len(s:res) == 0
+    if exists("w:res")
+        if len(w:res) == 0
+            return ''
+        endif
+        return '[' . substitute(w:res[w:count-1],'^\s*','','') . ']'
+    else
         return ''
     endif
-    return '[' . substitute(s:res[s:count-1],'^\s*','','') . ']'
 endfunction
 
 function! s:EchoFuncDisplay()
-    if len(s:res) == 0
+    if len(w:res) == 0
         return
     endif
     if g:EchoFuncShowOnStatus == 1
@@ -206,7 +207,7 @@ function! s:EchoFuncDisplay()
     endif
 
     set noshowmode
-    let content=s:res[s:count-1]
+    let content=w:res[w:count-1]
     let wincols=&columns
     let allowedheight=&lines/5
     let statusline=(&laststatus==1 && winnr('$')>1) || (&laststatus==2)
@@ -240,7 +241,7 @@ function! s:CallTagList(str)
 endfunction
 
 function! s:GetFunctions(fun, fn_only)
-    let s:res=[]
+    let w:res=[]
     let funpat=escape(a:fun,'[\*~^')
     let ftags=s:CallTagList('^'.funpat.'$')
 
@@ -287,7 +288,7 @@ function! s:GetFunctions(fun, fn_only)
     if fil_tag==[]
         return
     endif
-    let s:count=1
+    let w:count=1
     for i in fil_tag
         if has_key(i,'kind') && has_key(i,'name') && has_key(i,'signature')
             let tmppat=substitute(escape(i.name,'[\*~^'),'^.*::','','')
@@ -362,7 +363,7 @@ function! s:GetFunctions(fun, fn_only)
         if i.cmd > 0
             let file_line=file_line . ':' . i.cmd
         endif
-        let s:res+=[name.' ('.(index(fil_tag,i)+1).'/'.len(fil_tag).') '.file_line]
+        let w:res+=[name.' ('.(index(fil_tag,i)+1).'/'.len(fil_tag).') '.file_line]
     endfor
 endfunction
 
@@ -379,57 +380,144 @@ function! s:GetFuncName(text)
 endfunction
 
 function! EchoFunc()
-    let name=s:GetFuncName(getline('.')[:(col('.')-3)])
-    if name==''
+    let index =  getline('.')[col('.') - 1] == '(' ? col('.') - 1 : col('.') - 2
+    let str = getline('.')[:index]
+    if str =~# '\m^\s*('
+        let str = getline(line(".") - 1) . "("
+    endif
+    if str == '' || str !~# '\m\k\+\s*($'
         return ''
     endif
+    let str = substitute(str, '\m\s*(\+$','', "")
+    let name = s:GetFuncName(str)
     call s:GetFunctions(name, 1)
+    if len(w:res) != 0
+        let b:echoline = line('.')
+        let b:echocol = index
+    endif
     call s:EchoFuncDisplay()
     return ''
 endfunction
 
 function! EchoFuncN()
-    if s:res==[]
+    if w:res==[]
         return ''
     endif
-    if s:count==len(s:res)
-        let s:count=1
+    if w:count==len(w:res)
+        let w:count=1
     else
-        let s:count+=1
+        let w:count+=1
     endif
     call s:EchoFuncDisplay()
     return ''
 endfunction
 
 function! EchoFuncP()
-    if s:res==[]
+    if w:res==[]
         return ''
     endif
-    if s:count==1
-        let s:count=len(s:res)
+    if w:count==1
+        let w:count=len(w:res)
     else
-        let s:count-=1
+        let w:count-=1
     endif
     call s:EchoFuncDisplay()
     return ''
 endfunction
 
+imap <expr> <Plug>EchoFuncDis EchoFunc()
+imap <expr> <Plug>EchoFuncClear EchoFuncClear()
+
 function! EchoFuncStart()
     if exists('b:EchoFuncStarted')
         return
     endif
+
+    let w:res=[]
+    let w:count=1
+
     let b:EchoFuncStarted=1
     let s:ShowMode=&showmode
     let s:CmdHeight=&cmdheight
-    inoremap <silent> <buffer>  (   (<c-r>=EchoFunc()<cr>
-    inoremap <silent> <buffer>  )    <c-r>=EchoFuncClear()<cr>)
-    exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyNext . ' <c-r>=EchoFuncN()<cr>'
-    exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyPrev . ' <c-r>=EchoFuncP()<cr>'
+    let b:maparg_left = {}
+    let b:maparg_right = {}
+    if maparg("(","i") == ''
+        imap <silent> <buffer>  (   (<Plug>EchoFuncDis
+    elseif maparg("(",'i',0,1)['expr'] == 0
+        let b:maparg_left = maparg("(",'i',0,1)
+        let map = maparg("(", "i", 0, 1)['noremap'] ? "inoremap" : "imap"
+        let buffer = maparg("(", "i", 0, 1)['buffer'] ? '<buffer>' : ''
+        execute map." ".buffer." ( ".maparg("(", "i")."<Space><BS>".
+                    \(map =~ "inoremap" ? '<C-R>=EchoFunc()<CR>' : '<Plug>EchoFuncDis' )
+    else
+        echo "can't map ( for echofunc"
+    endif
+
+    if maparg(")","i") == ''
+        imap <silent> <buffer>  )   )<Plug>EchoFuncClear
+    elseif maparg(")",'i',0,1)['expr'] == 0
+        let b:maparg_right = maparg(")",'i',0,1)
+        let map = maparg(")", "i", 0, 1)['noremap'] ? "inoremap" : "imap"
+        let buffer = maparg(")", "i", 0, 1)['buffer'] ? '<buffer>' : ''
+        execute map." ".buffer." ) ".maparg(")", "i")."<Space><BS>".
+                    \(map =~ "inoremap" ? '<C-R>=EchoFuncClear()<CR>' :
+                    \'<Plug>EchoFuncClear')
+    else
+        echo "can't map ) for echofunc"
+    endif
+
+    if maparg(g:EchoFuncKeyNext, "i") == '' && maparg(g:EchoFuncKeyPrev, "i") == ''
+        exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyNext . ' <c-r>=EchoFuncN()<cr>'
+        exec 'inoremap <silent> <buffer> ' . g:EchoFuncKeyPrev . ' <c-r>=EchoFuncP()<cr>'
+    endif
+
+    augroup ECHOFUNC
+        au!
+        autocmd CompleteDone <buffer> call EchoFunc()
+    augroup END
 endfunction
 
 function! EchoFuncClear()
-    echo ''
-    let s:res=[]
+    if exists("b:echoline") && exists("b:echocol")
+        let index =  getline('.')[col('.') - 1] == ')' ? col('.') - 1 :
+                    \ ( getline('.')[col('.')] == ')' ? col('.') : col('.') + 1)
+        let line = line(".")
+        let col = index
+        if line < b:echoline || ( line == b:echoline && col <= b:echocol)
+            return ''
+        endif
+
+        let lines = getline(b:echoline, line)
+        if line == b:echoline
+            let lines[0] = strpart(lines[0], b:echocol, col - b:echocol + 1)
+        else
+            let lines[0] = strpart(lines[0], b:echocol)
+            let lines[-1] = strpart(lines[-1], 0, col + 1)
+        endif
+        let openbrace = 0
+        let closebrace = 0
+        for ll in lines
+            "remove strings
+            let ll = substitute(ll, '\v(''([^'']|\\'')*'')|("([^"]|\\")*")', '', 'g')
+            for c in split(ll, '\zs')
+                if c == '('
+                    let openbrace += 1
+                elseif c == ')'
+                    let closebrace += 1
+                endif
+            endfor
+        endfor
+        if openbrace == closebrace
+            let w:res = []
+            unlet b:echoline
+            unlet b:echocol
+            if g:EchoFuncShowOnStatus
+                redrawstatus
+            else
+                echo ''
+            endif
+        endif
+    endif
     return ''
 endfunction
 
@@ -437,10 +525,29 @@ function! EchoFuncStop()
     if !exists('b:EchoFuncStarted')
         return
     endif
-    iunmap      <buffer>    (
-    iunmap      <buffer>    )
-    exec 'iunmap <buffer> ' . g:EchoFuncKeyNext
-    exec 'iunmap <buffer> ' . g:EchoFuncKeyPrev
+    if maparg("(","i") == "(<Plug>EchoFuncDis"
+        iunmap      <buffer>    (
+    elseif b:maparg_left != {}
+        execute (b:maparg_left['noremap'] ? "inoremap" : "imap").' '
+                    \.(b:maparg_left['buffer'] ? "<buffer>" : "")
+                    \.(b:maparg_left['silent'] ? "<silent>" : "").' '
+                    \.b:maparg_left['lhs'].' '.b:maparg_left['rhs']
+    endif
+
+    if maparg(")","i") == ")<Plug>EchoFuncClear"
+        iunmap      <buffer>    )
+    elseif b:maparg_right != {}
+        execute (b:maparg_right['noremap'] ? "inoremap" : "imap").' '
+                    \.(b:maparg_right['buffer'] ? "<buffer>" : "")
+                    \.(b:maparg_right['silent'] ? "<silent>" : "").' '
+                    \.b:maparg_right['lhs'].' '.b:maparg_right['rhs']
+    endif
+
+    if maparg(g:EchoFuncKeyNext, "i") == '<c-r>=EchoFuncN()<cr>' && maparg(g:EchoFuncKeyPrev, "i") == '<c-r>=EchoFuncP()<cr>'
+        exec 'iunmap <buffer> ' . g:EchoFuncKeyNext
+        exec 'iunmap <buffer> ' . g:EchoFuncKeyPrev
+    endif
+    au! ECHOFUNC
     unlet b:EchoFuncStarted
 endfunction
 
@@ -453,6 +560,10 @@ function! EchoFuncRestoreSettings()
     endif
     exec "set cmdheight=".s:CmdHeight
     echo
+    if g:EchoFuncShowOnStatus
+        let w:res = []
+        redrawstatus
+    endif
 endfunction
 
 function! BalloonDeclaration()
@@ -480,7 +591,7 @@ function! BalloonDeclaration()
     call s:GetFunctions(name, 0)
     let result = ""
     let cnt=0
-    for item in s:res
+    for item in w:res
         if cnt < g:EchoFuncMaxBalloonDeclarations
             let result = result . item . "\n"
         endif
