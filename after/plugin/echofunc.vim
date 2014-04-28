@@ -442,7 +442,7 @@ function! EchoFuncStart()
     let b:maparg_left = {}
     let b:maparg_right = {}
     if maparg("(","i") == ''
-        imap <silent> <buffer>  (   (<Plug>EchoFuncDis
+        imap <silent> <buffer>  (   <Space><BS>(<Plug>EchoFuncDis
     elseif maparg("(",'i',0,1)['expr'] == 0
         let b:maparg_left = maparg("(",'i',0,1)
         let map = maparg("(", "i", 0, 1)['noremap'] ? "inoremap" : "imap"
