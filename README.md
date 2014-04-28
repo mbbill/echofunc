@@ -1,7 +1,11 @@
 ### [Link to vim.org](http://www.vim.org/scripts/script.php?script_id=1735)
 
 ### Install
-Throw **[echofunc.vim](https://github.com/mbbill/echofunc/blob/master/plugin/echofunc.vim)** into *plugin* directory and that's all.
+1. Method 1: download the entire 'after' directory and put in your *plugin* directory.
+1. Method 2: Use pathogen or vundle to clone this repo.
+	1. add the following line in your vimrc to let pathogen recognize the 'after' folder.
+
+	call pathogen#incubate("after")
 
 ### How to use
 1. *echofunc.vim* get function information from tags file. So first of all you need to create tags for your code.

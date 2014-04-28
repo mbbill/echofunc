@@ -385,7 +385,9 @@ function! EchoFunc()
     if str =~# '\m^\s*('
         let str = getline(line(".") - 1) . "("
     endif
-    if str == '' || str !~# '\m\k\+\s*($'
+    "if str == '' || str !~# '\m\k\+\s*($'
+    "temporarily disable the check
+    if str == ''
         return ''
     endif
     let str = substitute(str, '\m\s*(\+$','', "")
