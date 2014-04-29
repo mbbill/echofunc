@@ -382,6 +382,7 @@ endfunction
 function! EchoFunc()
     let index =  getline('.')[col('.') - 1] == '(' ? col('.') - 1 : col('.') - 2
     let str = getline('.')[:index]
+    let g:dd_str = str
     if str =~# '\m^\s*('
         let str = getline(line(".") - 1) . "("
     endif
@@ -425,9 +426,6 @@ function! EchoFuncP()
     return ''
 endfunction
 
-imap <expr> <Plug>EchoFuncDis EchoFunc()
-imap <expr> <Plug>EchoFuncClear EchoFuncClear()
-
 function! EchoFuncStart()
     if exists('b:EchoFuncStarted')
         return
@@ -442,26 +440,23 @@ function! EchoFuncStart()
     let b:maparg_left = {}
     let b:maparg_right = {}
     if maparg("(","i") == ''
-        imap <silent> <buffer>  (   <Space><BS>(<Plug>EchoFuncDis
+        inoremap <silent> <buffer>  (   (<C-R>=EchoFunc()<CR>
     elseif maparg("(",'i',0,1)['expr'] == 0
         let b:maparg_left = maparg("(",'i',0,1)
         let map = maparg("(", "i", 0, 1)['noremap'] ? "inoremap" : "imap"
         let buffer = maparg("(", "i", 0, 1)['buffer'] ? '<buffer>' : ''
-        execute map." ".buffer." ( ".maparg("(", "i")."<Space><BS>".
-                    \(map =~ "inoremap" ? '<C-R>=EchoFunc()<CR>' : '<Plug>EchoFuncDis' )
+        execute map." ".buffer." ( ".maparg("(", "i").'<C-R>=EchoFunc()<CR>'
     else
         echo "can't map ( for echofunc"
     endif
 
     if maparg(")","i") == ''
-        imap <silent> <buffer>  )   )<Plug>EchoFuncClear
+        inoremap <silent> <buffer>  )   )<C-R>=EchoFuncClear()<CR>
     elseif maparg(")",'i',0,1)['expr'] == 0
         let b:maparg_right = maparg(")",'i',0,1)
         let map = maparg(")", "i", 0, 1)['noremap'] ? "inoremap" : "imap"
         let buffer = maparg(")", "i", 0, 1)['buffer'] ? '<buffer>' : ''
-        execute map." ".buffer." ) ".maparg(")", "i")."<Space><BS>".
-                    \(map =~ "inoremap" ? '<C-R>=EchoFuncClear()<CR>' :
-                    \'<Plug>EchoFuncClear')
+        execute map." ".buffer." ) ".maparg(")", "i").'<C-R>=EchoFuncClear()<CR>'
     else
         echo "can't map ) for echofunc"
     endif
@@ -525,7 +520,7 @@ function! EchoFuncStop()
     if !exists('b:EchoFuncStarted')
         return
     endif
-    if maparg("(","i") == "(<Plug>EchoFuncDis"
+    if maparg("(","i") == "(<C-R>=EchoFunc()<CR>"
         iunmap      <buffer>    (
     elseif b:maparg_left != {}
         execute (b:maparg_left['noremap'] ? "inoremap" : "imap").' '
@@ -534,7 +529,7 @@ function! EchoFuncStop()
                     \.b:maparg_left['lhs'].' '.b:maparg_left['rhs']
     endif
 
-    if maparg(")","i") == ")<Plug>EchoFuncClear"
+    if maparg(")","i") == ")<C-R>=EchoFuncClear()<CR>"
         iunmap      <buffer>    )
     elseif b:maparg_right != {}
         execute (b:maparg_right['noremap'] ? "inoremap" : "imap").' '
