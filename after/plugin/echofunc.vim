@@ -382,7 +382,6 @@ endfunction
 function! EchoFunc()
     let index =  getline('.')[col('.') - 1] == '(' ? col('.') - 1 : col('.') - 2
     let str = getline('.')[:index]
-    let g:dd_str = str
     if str =~# '\m^\s*('
         let str = getline(line(".") - 1) . "("
     endif
