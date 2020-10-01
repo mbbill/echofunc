@@ -7,7 +7,7 @@
 
 	call pathogen#incubate("after")
 
-### How to use
+### How to use efficiently
 1. *echofunc.vim* get function information from tags file. So first of all you need to create tags for your code.
 Use the following command to generate tags with language and signature fields:
 $ctags -R --fields=+lS .
@@ -15,7 +15,7 @@ $ctags -R --fields=+lS .
 1. The function info is displayed in message line by default. Since the message line may be flushed by other trivial messages, a better way is to show function info in status line by appendding `%{EchoFuncGetStatusLine()}` into your `statusline` option. 
 1. Another feature of *echofunc.vim* is to privide a balloon tip when the mouse cursor hovers a function name, macro name, etc. This feature is enabled when `+balloon_eval` is compiled in.
 
-### Screenshot
+### Screenshot for reference
 ![](https://sites.google.com/site/mbbill/echofunc_demo1.png)
 ![](https://sites.google.com/site/mbbill/echofunc_demo2.png)
 
