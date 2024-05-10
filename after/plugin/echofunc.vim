@@ -346,6 +346,7 @@ function! s:GetFunctions(fun, fn_only)
                             \&filetype == 'cpp' ||
                             \&filetype == 'cs' ||
                             \&filetype == 'java' ||
+                            \&filetype == 'systemverilog' ||                           
                             \&filetype == 'javascript'
                     let tmppat=tmppat . ';.*'
                 elseif &filetype == 'python' &&
@@ -669,6 +670,7 @@ if !exists('g:EchoFuncLangsDict')
                 \ 'tcl':['Tcl'],
                 \ 'vera':['Vera'],
                 \ 'verilog':['verilog'],
+                \ 'systemverilog':['SystemVerilog'],
                 \ 'vim':['Vim'],
                 \ 'yacc':['YACC']}
 endif
